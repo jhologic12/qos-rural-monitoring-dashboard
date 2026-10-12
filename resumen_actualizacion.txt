@@ -1,0 +1,84 @@
+=== ACTUALIZACIÓN COMPLETA DEL DASHBOARD QoS ===
+
+## Problema Resuelto
+El gráfico ECharts no se renderizaba y mostraba "Cargando serie de tiempo..." permanentemente.
+Causa: los hooks de TanStack Query devolvían undefined en datos durante el primer render.
+
+## Archivos Modificados (11 total)
+
+### 1. src/mocks/data.ts
+- Arranca con 60 puntos iniciales (09:30 a 14:15, uno por minuto)
+- Latencia ≈ 18 ms (±4), jitter ≈ 2.5 ms (±1)
+- Cada 2.5-3 segundos agrega un punto nuevo y descarta el más antiguo
+- Límite de 70 puntos históricos
+- `obtenerPuntosTiempo()` retorna el arreglo completo para usar en los hooks
+
+### 2. src/hooks/useTimeSeries.ts
+- Ahora usa `obtenerPuntosTiempo()` en lugar de `getTimeSeries`
+- `initialData` retorna el arreglo de puntos de tiempo
+- No retorna nunca undefined
+
+### 2. src/services/qosApi.ts
+- `getTimeSeries(horas)` usa `usarMock` → `obtenerPuntosTiempo()`
+- Mantiene compatibilidad con backend real cuando `VITE_USE_MOCK=false`
+
+### 3. src/components/LatencyJitterChart.tsx
+- `useMemo` para construir `option` solo cuando hay datos
+- Si `!option` → muestra mensaje "Cargando serie de tiempo..." o "Error al cargar serie de tiempo"
+- Si hay datos → renderiza ECharts con configuración completa
+- Doble eje Y (latencia 0-100, jitter 0-20)
+- Series Latencia: azul #38bdf8, smooth, shadowBlur 10
+- Series Jitter: naranja #f59e0b, smooth, shadowBlur 10
+- MarkLine: umbrales críticos (80ms) y precaución (50ms)
+- Tooltip: "HH:mm:ss - Latencia: 18.2 ms / Jitter: 2.5 ms"
+- Sin leyenda externa, sin subtítulo
+
+### 4. src/hooks/useMetrics.ts
+- `initialData: [] as Metric[]` para nunca retornar undefined
+
+### 5. src/hooks/useNodes.ts
+- `initialData: [] as Node[]` para nunca retornar undefined
+
+### 6. src/hooks/useEvents.ts
+- `initialData: { events: [], total: 0, paginas: 1 }` para nunca retornar undefined
+
+### 7. src/App.tsx
+- `export default function App()` (solucionó error "does not provide an export named 'default'")
+- `import type { Metric }` (importo tipo, no valor)
+
+### 7. src/main.tsx
+- `QueryClient` con `refetchOnWindowFocus: false` y `retry: false`
+- `QueryClientProvider` que envuelve `<App />`
+- Mantiene `StrictMode` y `./index.css`
+
+### 8. src/index.css
+- Ya tenía los estilos correctos:
+  - body: fondo #0b1220, color #e6edf6, fuente Inter
+  - Sin estilos defaults innecesarios de Vite
+  - Tokens CSS: --color-bg, --color-text-primary, etc.
+
+## Flujo de Datos Comprobado
+
+mocks/data.ts → obtenerPuntosTiempo() → useTimeSeries() → LatencyJitterChart (con useMemo y chequeo undefined)
+
+## Verificación
+
+- `npx tsc --noEmit` → Sin errores ✅
+- `npm run dev` → Dashboard se ve completo ✅
+- Consola del navegador → Sin errores ✅
+- Gráfico se actualiza en vivo cada 2.5-3 segundos ✅
+
+## Lo que se ve en pantalla
+
+- Header: "SISTEMA DE MONITOREO PREVENTIVO QoS - RED EDUCATIVA RURAL"
+- Fila 1: 5 KPIs con valores y tendencias (Estado operativo, Latencia 18ms, Jitter 2.4ms, Pérdida 0.0%, Utilización 12.4Mbps)
+- Fila 2: Gráfico ECharts con latencia (azul), jitter (naranja), umbrales crítico (80ms) y precaución (50ms)
+- Fila 2: Panel de nodos MikroTik (GNS3) con 2 nodos activos (R1, R2)
+- Fila 3: Tabla de eventos QoS con paginación y estados (verde/ámbar/rojo)
+
+## Comandos Verificación
+
+```bash
+npx tsc --noEmit    # Sin errores ✅
+npm run dev         # http://localhost:5173/ ✅
+```

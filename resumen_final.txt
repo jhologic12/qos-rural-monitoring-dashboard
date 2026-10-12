@@ -1,0 +1,82 @@
+=== ARCHIVOS MODIFICADOS ===
+
+1. src/components/LatencyJitterChart.tsx
+   - Agregado useMemo para construir 'option' solo cuando hay datos
+   - Agregado chequeo 'if (!option)' para mostrar estado de carga
+   - Eliminado el renderizado de ECharts cuando option es undefined
+   - Los datos se acceden con optional chaining y chequeos de longitud
+
+2. src/hooks/useMetrics.ts
+   - Agregado 'initialData: [] as Metric[]' para nunca retornar undefined
+
+3. src/hooks/useNodes.ts
+   - Agregado 'initialData: [] as Node[]' para nunca retornar undefined
+
+4. src/hooks/useEvents.ts
+   - Agregado 'initialData: { events: [], total: 0, paginas: 1 }' para nunca retornar undefined
+
+5. src/hooks/useTimeSeries.ts
+   - Agregado 'initialData: [] as TimePoint[]' para nunca retornar undefined
+
+6. src/components/KpiCard.tsx
+   - Ya tenía manejo de undefined con defaults (trend="neutral", subtitle&&, badge&&)
+   - Sin cambios mayores necesarios
+
+7. src/components/GlobalStatusCard.tsx
+   - Recibe latencia/jitter/perdidaPaquetes como number en la interfaz
+   - getStatus() siempre retorna "optimo"|"degradado"|"critico"
+   - Sin cambios mayores necesarios
+
+8. src/components/Sparkline.tsx
+   - Ya tenía protección: points = timeSeries?.slice(0, dataPoints) || []
+   - Ya tenía chequeo if (normalized.length < 2) return "M0 0 L0 0"
+   - Math.min/max con || 1 para range
+
+9. src/components/EventsTable.tsx
+   - Ya tenía chequeo if (isLoading) antes de renderizar tabla
+   - data?.events || [], data?.total || 0, data?.paginas || 1
+   - Chequeo eventos.length === 0 para mostrar "No hay eventos registrados"
+
+10. src/components/NodesPanel.tsx
+    - Ya tenía nodes?.map((node) => ...) con optional chaining
+    - NodeCard recibe propiedades esperadas del objeto Node
+
+11. src/services/qosApi.ts
+    - Convertido imports a import type { Metric, TimePoint, Node, QosEventType }
+
+12. src/mocks/data.ts
+    - Convertido imports a import type { TimePoint, Metric }
+
+13. src/App.tsx
+    - Agregado export default function App()
+    - Convertido import { Metric } a import type { Metric }
+
+14. src/main.tsx
+    - Agregado QueryClient con refetchOnWindowFocus: false y retry: false
+    - Agregado QueryClientProvider que envuelve <App />
+
+15. src/index.css
+    - Ya tenía body { background-color: var(--bg-page): #0b1220, color: var(--text-primary): #e6edf6, font: Inter }
+    - Ya tenía @import "tailwindcss" y @theme con tokens
+
+=== RESUMEN ===
+
+Problema resuelto: "Uncaught TypeError: Cannot read properties of undefined (reading 'length')" y "echarts Error: option is null/undefined"
+
+Causa raíz: los hooks de TanStack Query retornaban undefined en data durante el primer render, y los componentes intentaban acceder a .length y propiedades de ese undefined.
+
+Solución:
+1. Hooks ahora tienen initialData coherente con sus tipos
+2. LatencyJitterChart usa useMemo para construir option y chequea si es undefined antes de renderizar ECharts
+3. Los componentes protegen accesos a datos posiblemente undefined
+4. KpiCard, EventsTable, Sparkline, NodesPanel ya tenían buen manejo de undefined
+
+Resultado:
+- npx tsc --noEmit: Sin errores ✅
+- npm run dev: Dashboard se ve completo sin errores en consola ✅
+- Header visible: "SISTEMA DE MONITOREO PREVENTIVO QoS - RED EDUCATIVA RURAL" ✅
+- 5 KPIs visibles: Estado operativo, Latencia, Jitter, Pérdida de paquetes, Utilización ✅
+- Gráfico ECharts con latencia, jitter y umbrales ✅
+- Panel de nodos MikroTik ✅
+- Tabla de eventos con paginación ✅
+- Consola del navegador sin errores ✅

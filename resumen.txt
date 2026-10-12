@@ -1,0 +1,29 @@
+=== Archivos modificados ===
+
+1. src/types/qos.ts
+   - Verifica que exporta todos los tipos: TimePoint, Metric, Node, QosEvent, QosEventType, Status
+   - Exporta `export type { QosEventType }` al final
+
+2. src/services/qosApi.ts
+   - Convirtió `import { Metric, TimePoint, Node, QosEventType }` a `import type { Metric, TimePoint, Node, QosEventType }`
+   - Todos los usos de estos nombres son solo en anotaciones de tipo
+
+3. src/mocks/data.ts
+   - Convirtió `import { TimePoint, Metric }` a `import type { TimePoint, Metric }`
+   - Estos tipos se usan solo en anotaciones de tipo y retornos de funciones
+
+4. src/App.tsx
+   - Convirtió `import { Metric }` a `import type { Metric }`
+   - Metric ya no se usa como valor en el código, solo como tipo
+
+5. src/index.css
+   - Agregódirectiva `@theme` con todos los tokens de color y sombra
+   - Eliminó la necesidad de tailwind.config.ts (configuración migrada al CSS)
+   - Mantiene `@import "tailwindcss"` como primera línea
+
+=== Resumen de cambios ===
+
+TypeScript: npx tsc --noEmit pasa limpio (sin errores)
+Imports: Todos los imports de tipos en src/ ahora usan import type { ... }
+Tailwind: Migración de tailwind.config.ts a @theme en src/index.css
+Resultado: npm run dev inicia el dashboard sin errores de sintaxis en la consola
