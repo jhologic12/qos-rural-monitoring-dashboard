@@ -100,3 +100,13 @@ VITE_USE_MOCK=false
 ```
 
 y expón los endpoints `/api/qos/*` (métricas, serie de tiempo, nodos y eventos).
+
+# 🌐 QoS Rural Monitoring Dashboard UI/UX
+
+> **Proyecto de Ingeniería II (Código 202337121) — Fase 3: Gestión del Proyecto**
+> **Universidad Nacional Abierta y a Distancia (UNAD)**
+> **Grupo:** 202337121_29
+
+🔗 **Demo en vivo:** [https://qos-rural-monitoring-dashboard.vercel.app](https://qos-rural-monitoring-dashboard.vercel.app/)
+
+---
