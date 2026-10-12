@@ -1,56 +1,86 @@
-import React from "react";
-import { useQuery } from "@tanstack/react-query";
+import type { ReactNode } from "react";
+import { Cpu, MemoryStick, Router } from "lucide-react";
 import { useNodes } from "../hooks/useNodes";
 import type { Node } from "../types/qos";
 
-interface NodeCardProps {
-  node: Node;
+const ESTADO_COLOR: Record<Node["estado"], string> = {
+  online: "#22c55e",
+  degradado: "#facc15",
+  offline: "#ef4444",
+};
+
+function UsageBar({ icon, value }: { icon: ReactNode; value: number }) {
+  return (
+    <div className="flex items-center gap-2 text-[10px] text-[#8b98ad]">
+      {icon}
+      <div className="h-1.5 flex-1 rounded-full bg-[#0d1524]">
+        <div
+          className="h-1.5 rounded-full"
+          style={{
+            width: `${Math.min(100, Math.max(0, value))}%`,
+            background: "linear-gradient(90deg, #16a34a, #4ade80)",
+          }}
+        />
+      </div>
+      <span className="w-8 text-right">{value}%</span>
+    </div>
+  );
 }
 
-export const NodeCard: React.FC<NodeCardProps> = ({
-  node,
-}) => {
+export const NodeCard = ({ node }: { node: Node }) => {
+  const color = ESTADO_COLOR[node.estado];
   return (
-    <article className="node-card">
-      <div className="flex justify-between items-center mb-2">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded bg-slate-900 flex items-center justify-center">
-            <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-            </svg>
-          </div>
-          <span className="font-medium text-white">{node.nombre}</span>
+    <article className="rounded-lg border border-[#1e2a40] bg-[#15203a] p-3">
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded bg-[#0d1524]">
+          <Router size={18} color="#8b98ad" />
         </div>
-        <span className="status-dot bg-emerald-500 rounded-full w-2 h-2" />
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-white">{node.nombre}</p>
+          <p className="text-[11px] text-[#8b98ad]">{node.ip}</p>
+        </div>
+        <span
+          className="h-2.5 w-2.5 rounded-full"
+          style={{ background: color, boxShadow: `0 0 10px ${color}` }}
+        />
       </div>
-      <p className="text-xs text-slate-500 font-mono">{node.ip}</p>
-      <div className="grid grid-cols-2 gap-2 text-xs text-slate-400 border-t border-slate-800/60 pt-1">
-        <div>CPU: <span className="font-medium text-white">{node.cpu}%</span></div>
-        <div>RAM: <span className="font-medium text-white">{node.ram}%</span></div>
+      <div className="mt-3 flex flex-col gap-1.5">
+        <UsageBar icon={<Cpu size={12} />} value={node.cpu} />
+        <UsageBar icon={<MemoryStick size={12} />} value={node.ram} />
       </div>
     </article>
   );
 };
 
-export const NodesPanel: React.FC = () => {
-  const { data: nodes } = useNodes();
+export const NodesPanel = () => {
+  const { data: nodes = [] } = useNodes();
+  const activos = nodes.filter((n) => n.estado === "online").length;
 
   return (
-    <div className="card card-hover">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-bold text-white">
+    <div className="flex flex-col gap-3 rounded-xl border border-[#1e2a40] bg-[#111a2b] p-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[#e6edf6]">
           NODOS MIKROTIK (GNS3)
         </h2>
-        <span className="text-xs bg-indigo-500/5 border border-indigo-500/10 rounded px-2 py-1 text-slate-400">2 Activos</span>
+        <span className="text-[#8b98ad]">⋮</span>
       </div>
 
-      <div className="space-y-4">
-        {nodes?.map((node) => (
+      <div className="flex items-center justify-between">
+        <span className="text-xl font-extrabold tracking-wide text-[#38bdf8]">
+          GNS3
+        </span>
+        <span className="text-xs font-medium text-[#4ade80]">
+          {activos} Activos
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        {nodes.map((node) => (
           <NodeCard key={node.id} node={node} />
         ))}
       </div>
 
-      <button className="w-full px-3 py-2 bg-card-hover border border-slate-600/50 rounded-xl text-xs font-medium text-slate-400 hover:border-slate-600/70 transition">
+      <button className="mt-1 w-full rounded-lg border border-[#1e2a40] bg-[#15203a] px-3 py-2 text-xs font-medium text-[#8b98ad] transition hover:text-white">
         Ver Mapa GNS3 Completo
       </button>
     </div>
